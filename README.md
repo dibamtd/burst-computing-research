@@ -32,28 +32,38 @@ Diagrams, complexity reasoning, and written reflections.
 
 ## 📁 Repository Structure
 
-```text
 burst-computing-research/
 │
-├── burst_examples/            # Rust programs using Burst
+├── burst_examples/            
+│   ├── hello_world_local.md
+│   ├── hello_world_remote.md
+│   ├── burst_ping_pong.rs?   (بعداً)
+│   ├── burst_kmeans_notes.md
 │
-├── docs/                      # Architecture, explanations, diagrams
-│   ├── BURST_OVERVIEW.md
-│   ├── INTERNAL_DESIGN.md
-│   ├── HOW_CHANNELS_WORK.md
-│   ├── KMEANS_ARCHITECTURE.md
+├── docs/                      
+│   ├── BURST_OVERVIEW.md              # توضیح کامل درباره Burst
+│   ├── INTERNAL_DESIGN.md             # نحوه کار داخل Middleware
+│   ├── HOW_CHANNELS_WORK.md           # Channels / batching / queues
+│   ├── KMEANS_ARCHITECTURE.md         # تحلیل کامل K-means Rust
+│   ├── burst_hello_world.md           # همین فایلی که الان ساختیم
 │   ├── diagrams/
+│   │    ├── architecture.png
+│   │    ├── kmeans_flow.png
+│   │    └── messaging_flow.png
 │   └── balanced_kmeans/
-│       └── PLAN.md
+│        ├── PLAN.md                   # طراحی الگوریتم
+│        └── IMPLEMENTATION.md         # بعداً اضافه می‌کنیم
 │
-├── benchmarks/                # Performance measurements
+├── notes/                             
+│   ├── rust_learning.md               # نکات Rust که یاد می‌گیری
+│   ├── meeting_notes.md               # نکات جلسات با استاد
 │
-├── notes/                     # Rust learning notes & meeting notes
+├── benchmarks/
+│   ├── local_tests.md
+│   └── performance_evaluation.md
 │
-└── README.md                  # Overview of the entire project
-````
+└── README.md
 
----
 
 ## 🧪 Rust Examples
 
