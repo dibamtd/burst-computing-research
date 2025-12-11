@@ -1,4 +1,4 @@
-# 🌀 Burst Computing — Distributed Middleware Research Repository
+ # 🌀 Burst Computing — Distributed Middleware Research Repository
 
 This repository documents my journey in understanding, analyzing, and extending the **Burst Communication Middleware (BCM)** developed by Prof. Pedro García López and his team.  
 It includes:
@@ -34,6 +34,7 @@ Diagrams, complexity reasoning, and written reflections.
 
 burst-computing-research/
 │
+
 ├── burst_examples/            
 │   ├── hello_world_local.md
 │   ├── hello_world_remote.md
