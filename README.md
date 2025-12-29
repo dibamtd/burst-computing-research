@@ -1,155 +1,214 @@
-# 🌀 Burst Computing — Distributed Middleware Research Repository
 
-This repository documents my research journey in understanding, analyzing, and extending the **Burst Communication Middleware (BCM)** developed by **Prof. Pedro García López** and his team at URV.
+# 🌀 Burst Computing — Communication Middleware Exploration
+Spaces
+This repository documents my hands-on study and experimentation with **Burst Computing** and the **Burst Communication Middleware**, based on the USENIX ATC paper:
 
-It contains:
+> *Burst Computing: Isolated Functions Meet Elastic Clusters*
+> Pons et al., USENIX ATC 2025
 
-- Theoretical explanations  
-- System architecture diagrams  
-- Executable Rust examples  
-- Performance notes and benchmarks  
-- K-means on Burst  
-- A plan for Balanced K-means (requested in the PhD evaluation challenge)
+The goal of this repository is **understanding**, not re-implementing:
+to clearly explain *why Burst exists*, *what problem it solves*, and *how its communication model works in practice*.
 
 ---
 
-## 🎯 Goals of This Repository
+## 🎯 Motivation: Why Burst Computing?
 
-This repository is designed to demonstrate:
+### The problem with traditional FaaS
 
-### **1. Understanding of distributed communication middleware**
-- How Burst works internally (actors, batching, async channels, RabbitMQ backend)
-- How it differs from MPI and classical message-passing
+In classical **Function-as-a-Service (FaaS)** platforms:
 
-### **2. Ability to execute and analyze Rust-based distributed code**
-- Running official Burst examples locally
-- Observing concurrency, channels, and messaging flow
+* Each function (worker) is invoked independently
+* Workers are isolated by design
+* There is no notion of *group execution*
+* Communication must go through **external services** (Redis, S3, message queues)
 
-### **3. Ability to build distributed algorithms on top of Burst**
-- From MPI-based K-means → Burst K-means → Balanced K-means
+This model works well for stateless tasks, but **breaks down for parallel and distributed algorithms**.
 
-### **4. Research-level documentation**
-- Proper diagrams
-- Architecture analysis
-- Notes and design reflections
+### Traditional FaaS execution
 
----
+```
+                ┌───────────┐
+                │   Client  │
+                └─────┬─────┘
+                      │
+        ┌─────────────┼─────────────┐
+        │             │             │
+     invoke         invoke         invoke
+        │             │             │
+        v             v             v
+ ┌──────────┐   ┌──────────┐   ┌──────────┐
+ │ Worker 0 │   │ Worker 1 │   │ Worker 2 │
+ └────┬─────┘   └────┬─────┘   └────┬─────┘
+      │              │              │
+      └──────────────┼──────────────┘
+                     │
+                     v
+           ┌─────────────────────┐
+           │ External Service     │
+           │ (Redis / S3 / MQ)    │
+           └─────────────────────┘
 
-## 📁 Repository Structure
+```
 
-```plaintext
-burst-computing-research/
-│
-├── burst_examples/
-│   ├── hello_world_local.md
-│   ├── hello_world_remote.md
-│   ├── burst_ping_pong.rs        # (coming soon)
-│   ├── burst_kmeans_notes.md
-│
-├── docs/
-│   ├── BURST_OVERVIEW.md         # High-level conceptual explanation
-│   ├── INTERNAL_DESIGN.md        # How Burst works internally
-│   ├── HOW_CHANNELS_WORK.md      # Channels, batching, and queues
-│   ├── KMEANS_ARCHITECTURE.md    # K-means distributed design
-│   ├── burst_hello_world.md      # Analysis of hello world example
-│   │
-│   ├── diagrams/
-│   │   ├── architecture.png
-│   │   ├── kmeans_flow.png
-│   │   └── messaging_flow.png
-│   │
-│   └── balanced_kmeans/
-│       ├── PLAN.md               # Balanced K-means design
-│       └── IMPLEMENTATION.md     # To be completed later
-│
-├── notes/
-│   ├── rust_learning.md
-│   ├── meeting_notes.md
-│
-├── benchmarks/
-│   ├── local_tests.md
-│   └── performance_evaluation.md
-│
-└── README.md
-````
+**Issues:**
+
+* High startup latency
+* No locality
+* Expensive coordination
+* Poor fit for MPI-style algorithms
 
 ---
 
-## 🧪 Rust Examples (Executed Locally)
+## 🚀 Burst Computing: Key Idea
 
-These examples are based on the official Burst middleware:
+Burst Computing introduces **group invocation** using a concept called a **flare**.
 
-* `hello_world_local` (point-to-point messaging)
-* `hello_world_remote` (RabbitMQ backend)
-* `broadcast.rs`
-* `reduce.rs`
-* `kmeans_burst.rs` (WIP)
+A *flare*:
 
-All examples run inside:
+* Starts multiple workers **simultaneously**
+* Groups them into **packs**
+* Enables efficient **indirect communication**
+* Preserves isolation while enabling cooperation
+
+### Burst execution with flare (Figure-2 style)
+
+```
+                ┌───────────┐
+                │   Client  │
+                └─────┬─────┘
+                      │
+                   flare
+                      │
+                      v
+            ┌───────────────────┐
+            │     Controller    │
+            └─────────┬─────────┘
+                      │
+          ┌───────────┼───────────┐
+          │                           │
+          v                           v
+ ┌─────────────────┐        ┌─────────────────┐
+ │ Pack 0           │        │ Pack 1           │
+ │ ─────────────── │        │ ─────────────── │
+ │ Worker 0         │        │ Worker 3         │
+ │ Worker 1         │        │ Worker 4         │
+ │ Worker 2         │        │ Worker 5         │
+ └─────────────────┘        └─────────────────┘
+          │                           │
+          └───────── indirect ───────┘
+                    communication
+
+```
+
+**Key advantages:**
+
+* Single request starts many workers
+* Workers are aware of the group
+* Locality inside packs
+* Reduced communication overhead
+
+---
+
+## 🧠 What is the Burst Communication Middleware?
+
+The **Burst Communication Middleware (BCM)** is the runtime layer that enables:
+
+* Indirect communication between workers
+* Collective operations (broadcast, gather, pair, all-to-all)
+* Multiple backends:
+
+  * RabbitMQ
+  * Redis (lists / streams)
+  * Tokio channels (local)
+
+It provides **MPI-like semantics** in a serverless-compatible model.
+
+---
+
+## 🧪 What I Implemented and Executed
+
+### 1. Local execution environment
+
+* Linux (WSL / Ubuntu)
+* Rust toolchain
+* Docker
+* RabbitMQ backend
+
+### 2. Microbenchmarks (official Burst code)
+
+I successfully compiled and executed the **pair benchmark** using RabbitMQ.
+
+**Two workers, two terminals:**
+
+**Worker 0**
 
 ```bash
-cargo run --example <name> --features rabbitmq
+RUST_LOG=info cargo run --release \
+  -- --benchmark pair \
+  --burst-size 2 \
+  --group-id 0 \
+  --server "amqp://guest:guest@127.0.0.1:5672" \
+  rabbitmq
 ```
+
+**Worker 1**
+
+```bash
+RUST_LOG=info cargo run --release \
+  -- --benchmark pair \
+  --burst-size 2 \
+  --group-id 1 \
+  --server "amqp://guest:guest@127.0.0.1:5672" \
+  rabbitmq
+```
+
+### Observed behavior
+
+* Workers start together as part of the same burst
+* Worker 1 sends data → Worker 0 receives
+* Communication happens through the middleware, not direct sockets
+* Throughput and timing are measured automatically
+
+This confirms correct **group execution + indirect communication**.
 
 ---
 
-## ⚖️ Balanced K-means (Requested by Prof. Pedro)
+## 🧩 Relation to MPI
 
-A complete design plan is available in:
+| MPI               | Burst Middleware |
+| ----------------- | ---------------- |
+| `MPI_Init`        | flare invocation |
+| `MPI_Comm_size`   | burst_size       |
+| `MPI_Comm_rank`   | worker_id        |
+| `MPI_Send / Recv` | pair             |
+| `MPI_Bcast`       | broadcast        |
+| `MPI_Gather`      | gather           |
 
-```
-docs/balanced_kmeans/PLAN.md
-```
+Burst can be seen as **MPI concepts adapted to serverless environments**.
 
-Includes:
+---
 
-* Algorithmic ideas to enforce balanced clusters
-* Communication implications
-* Impact on parallelization
-* Evaluation strategy
+## 📌 What This Repository Demonstrates
 
-The implementation will be added as:
+* Clear understanding of the **limitations of FaaS**
+* Conceptual understanding of **Burst Computing**
+* Practical execution of **Burst communication middleware**
+* Ability to reason about **parallelism, locality, and coordination**
+* Readiness to analyze and extend distributed algorithms (e.g., K-means)
 
-```
-docs/balanced_kmeans/IMPLEMENTATION.md
-```
+---
+
+## 🧭 Next Steps
+
+* Analyze K-means implementation on top of Burst
+* Study how communication patterns scale with burst size
+* Explore balanced K-means as a possible extension
+* Prepare short presentation and live explanation
 
 ---
 
 ## 👩‍💻 Author
 
 **Diba Mtd**
-Prospective PhD student working with **Prof. Pedro García López**
-Research areas: Distributed Systems, Cloud Computing, Serverless Middleware
-
-Email: **[diba.mo72@gmail.com](mailto:diba.mo72@gmail.com)**
-GitHub: **[https://github.com/dibamtd](https://github.com/dibamtd)**
-
----
-
-## 🌱 Status
-
-### ✔ Completed
-
-* MPI fundamentals (Python + MPI4Py)
-* Distributed MPI K-means
-* Burst compiled locally (Rust + RabbitMQ)
-* Running `hello_world_local` successfully
-* Repository structure organized for research work
-
-### ⬜ In Progress
-
-* Custom Burst point-to-point example
-* Burst K-means implementation
-* Balanced K-means implementation
-
----
-
-## 🔭 Next Steps
-
-* Document internal Burst architecture (`BURST_OVERVIEW.md`)
-* Add messaging-flow diagrams (Burst vs MPI)
-* Build toy examples (ping-pong, worker pipeline)
-* Compare behavior of MPI vs Burst (qualitative + experimental)
-
----
+Prospective PhD student — Distributed Systems & Cloud Computing
+GitHub: [https://github.com/dibamtd](https://github.com/dibamtd)
