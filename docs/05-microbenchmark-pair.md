@@ -131,5 +131,3 @@ Performance analysis at scale is left for future experiments.
   * understanding BCM internals
   * preparing live coding exercises
   * extending communication patterns for k-means and other algorithms
-
-```
