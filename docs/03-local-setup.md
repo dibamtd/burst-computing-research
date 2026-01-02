@@ -58,6 +58,3 @@ cargo run --example hello_world_local --features rabbitmq
 
 This setup is used consistently for all experiments documented in
 this repository.
-
-```
-
