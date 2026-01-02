@@ -1,6 +1,3 @@
-## 📄 `docs/03-local-setup.md` (Merged & Clean)
-
-````md
 # Local Setup
 
 This repository is evaluated using a local environment to validate the
