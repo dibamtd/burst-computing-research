@@ -102,17 +102,17 @@ This abstraction hides transport details from the application code.
 ## Relation to MPI
 
 This hello-world example maps naturally to MPI concepts:
+| MPI Concept   | Burst / BCM                    |
+|---------------|--------------------------------|
+| MPI_Init      | Flare invocation (group start) |
+| MPI_Comm_rank | worker_id                      |
+| MPI_Send      | BCM send                       |
+| MPI_Recv      | BCM recv                       |
 
-| MPI Concept   | Burst / BCM      |
-| ------------- | ---------------- |
-| MPI_Init      | Flare invocation |
-| MPI_Comm_rank | worker_id        |
-| MPI_Send      | BCM send         |
-| MPI_Recv      | BCM recv         |
+Note: The mapping is conceptual. Flare invocation occurs at the platform
+level and subsumes both job launch and initialization, whereas MPI_Init
+is an explicit call within the application.
 
-Burst can be seen as MPI-style communication adapted to serverless
-constraints, where group execution and locality are managed by the
-platform.
 
 ## Key Takeaways
 
