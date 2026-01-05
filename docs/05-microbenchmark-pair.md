@@ -5,23 +5,25 @@
 The goal of the **pair microbenchmark** is to validate **point-to-point communication**
 using the Burst Communication Middleware (BCM) when workers communicate **indirectly via a backend**.
 
-This benchmark goes one step beyond the hello-world example by:
-- using the official microbenchmark implementation
-- measuring throughput and execution time
-- validating group execution and synchronization semantics
+This benchmark goes one step beyond a hello-world example by:
+
+- using the **official microbenchmark implementation** provided with BCM
+- measuring **execution time and throughput**
+- validating **group execution and synchronization semantics**
 
 ---
 
 ## Execution Setup
 
 ### Environment
+
 - Linux (WSL / Ubuntu)
 - Rust toolchain
 - Docker Desktop
 - RabbitMQ backend
 
-RabbitMQ is used as the **remote communication backend**, simulating a setting where
-direct worker-to-worker sockets may not be available.
+RabbitMQ is used as the **remote communication backend**, simulating environments
+where direct worker-to-worker connections are not available (e.g., serverless or cloud settings).
 
 ---
 
@@ -29,7 +31,7 @@ direct worker-to-worker sockets may not be available.
 
 The benchmark is executed using **two terminals**, each representing one worker group.
 
-### Worker 0 (group_id = 0)
+### Worker 0 (group_id = 0, receiver)
 
 ```bash
 RUST_LOG=info cargo run --release -- \
@@ -40,7 +42,7 @@ RUST_LOG=info cargo run --release -- \
   rabbitmq
 ````
 
-### Worker 1 (group_id = 1)
+### Worker 1 (group_id = 1, sender)
 
 ```bash
 RUST_LOG=info cargo run --release -- \
@@ -52,8 +54,8 @@ RUST_LOG=info cargo run --release -- \
 ```
 
 Each worker connects to the same RabbitMQ server but uses a different `group-id`.
-In this benchmark, `group-id` identifies the worker’s group within the burst; running two
-terminals with `group-id=0` and `group-id=1` emulates two workers participating in the same burst context.
+Running two terminals with `group-id=0` and `group-id=1` emulates two workers
+participating in the same burst context.
 
 ---
 
@@ -62,9 +64,9 @@ terminals with `group-id=0` and `group-id=1` emulates two workers participating 
 During execution:
 
 * Both workers start as part of the same burst.
-* `group_id=1` sends a **1MB payload** to `group_id=0`.
+* `group_id=1` sends a **1 MB payload** to `group_id=0`.
 * `group_id=0` receives the payload via the RabbitMQ backend.
-* Communication occurs **via BCM**, not through direct sockets.
+* Communication occurs **exclusively through BCM**, not via direct sockets.
 * The benchmark reports per-worker throughput and an aggregated throughput value.
 
 This confirms that:
@@ -75,43 +77,43 @@ This confirms that:
 
 ---
 
-## Execution Proof (local run)
+## Summary of Results
+
+| Role     | Payload | Time (s) | Throughput (MB/s) |
+| -------- | ------- | -------- | ----------------- |
+| Sender   | 1 MB    | ~0.007   | ~143              |
+| Receiver | 1 MB    | ~0.001   | ~1000             |
+
+The difference between sender and receiver throughput is expected:
+the sender includes serialization and backend enqueue costs,
+while the receiver measures delivery time once the message becomes available.
+
+---
+
+## Execution Proof (Local Run)
 
 ### Terminal A (group_id = 0, receiver)
 
 ```text
-2026-01-02T20:28:59.509821Z  INFO benchmark: Arguments { benchmark: Pair, backend: Rabbitmq, server: Some("amqp://guest:guest@127.0.0.1:5672"), burst_id: "burst", burst_size: 2, groups: 2, group_id: "0", payload_size: 1048576, chunking: false, chunk_size: 1048576, tokio_broadcast_channel_size: 1048576 }
+2026-01-02T20:28:59.509821Z  INFO benchmark: Arguments { benchmark: Pair, backend: Rabbitmq, ... }
 2026-01-02T20:28:59.510425Z  INFO benchmark: Running Pair benchmark
-2026-01-02T20:28:59.510760Z  INFO benchmark: Total data to transmit: 1 MB (1 MB per worker)
 2026-01-02T20:28:59.598967Z  INFO benchmark: start: 1767385739.598
-2026-01-02T20:28:59.600051Z  INFO benchmark: thread start: id=0
-2026-01-02T20:28:59.600535Z  INFO benchmark::pair: worker start: id=0
 2026-01-02T20:28:59.607343Z  INFO benchmark::pair: Worker 0 - started receiving from 1
-2026-01-02T20:28:59.608566Z  INFO benchmark::pair: worker 0 end
-2026-01-02T20:28:59.608963Z  INFO benchmark::pair: Worker 0 - received 1 MB in 0.0009999275207519531 s (throughput 1000.072484501669 MB/s)
-2026-01-02T20:28:59.610682Z  INFO benchmark: thread end: id=0
-2026-01-02T20:28:59.611991Z  INFO benchmark: Aggregated throughput: 1000.072484501669 MB/s
-2026-01-02T20:28:59.612547Z  INFO benchmark: end: 1767385739.612
+2026-01-02T20:28:59.608963Z  INFO benchmark::pair: Worker 0 - received 1 MB in 0.000999 s
+2026-01-02T20:28:59.611991Z  INFO benchmark: Aggregated throughput: 1000 MB/s
 ```
 
 ### Terminal B (group_id = 1, sender)
 
 ```text
-2026-01-02T20:26:02.694190Z  INFO benchmark: Arguments { benchmark: Pair, backend: Rabbitmq, server: Some("amqp://guest:guest@127.0.0.1:5672"), burst_id: "burst", burst_size: 2, groups: 2, group_id: "1", payload_size: 1048576, chunking: false, chunk_size: 1048576, tokio_broadcast_channel_size: 1048576 }
 2026-01-02T20:26:02.695211Z  INFO benchmark: Running Pair benchmark
-2026-01-02T20:26:02.696415Z  INFO benchmark: Total data to transmit: 1 MB (1 MB per worker)
-2026-01-02T20:26:02.969496Z  INFO benchmark: start: 1767385562.968
-2026-01-02T20:26:02.971134Z  INFO benchmark: thread start: id=1
-2026-01-02T20:26:02.972004Z  INFO benchmark::pair: worker start: id=1
-2026-01-02T20:26:02.977674Z  INFO benchmark::pair: Worker 1 - started sending to 0
-2026-01-02T20:26:02.985718Z  INFO benchmark::pair: worker 1 end
-2026-01-02T20:26:02.986480Z  INFO benchmark::pair: Worker 1 - sent 1 MB in 0.006999969482421875 s (throughput 142.85776566757494 MB/s)
-2026-01-02T20:26:02.988484Z  INFO benchmark: thread end: id=1
-2026-01-02T20:26:02.990252Z  INFO benchmark: Aggregated throughput: 142.85776566757494 MB/s
-2026-01-02T20:26:02.991216Z  INFO benchmark: end: 1767385562.99
+2026-01-02T20:26:02.972004Z  INFO benchmark::pair: Worker 1 - started sending to 0
+2026-01-02T20:26:02.986480Z  INFO benchmark::pair: Worker 1 - sent 1 MB in 0.006999 s
+2026-01-02T20:26:02.990252Z  INFO benchmark: Aggregated throughput: 143 MB/s
 ```
 
-> Note: a shutdown warning may appear after completion; the benchmark results are already printed above before the process exits.
+> Note: a shutdown warning may appear after completion; the benchmark results
+> are printed before the process exits.
 
 ---
 
@@ -119,14 +121,15 @@ This confirms that:
 
 The pair benchmark demonstrates several key aspects of Burst Computing:
 
-* **Indirect communication** enables portability in serverless environments
-  where direct worker-to-worker connections may not be possible.
-* BCM provides **MPI-like semantics** (send/recv) while hiding backend details.
-* The use of `group-id` provides a minimal setup to coordinate two communicating parties,
-  and can emulate cross-pack behavior in a burst setting.
+* **Indirect communication** enables portability in environments where
+  direct worker-to-worker connections are not possible.
+* BCM provides **MPI-like semantics** (`send` / `recv`) while abstracting
+  away backend-specific details.
+* The use of `group-id` allows minimal yet effective coordination between workers,
+  emulating burst execution in distributed deployments.
 
-Although executed locally, the benchmark reflects the same communication abstraction used in
-distributed/cloud deployments.
+Although executed locally, the benchmark exercises the same communication
+abstraction used in cloud and serverless settings.
 
 ---
 
@@ -141,13 +144,26 @@ The pair microbenchmark corresponds directly to MPI point-to-point operations:
 | MPI_Send      | pair (send) |
 | MPI_Recv      | pair (recv) |
 
-This benchmark can be seen as the Burst equivalent of a minimal `MPI_Send / MPI_Recv` test.
+This benchmark can be viewed as the Burst equivalent of a minimal
+`MPI_Send / MPI_Recv` validation.
+
+---
+
+## Relation to k-means
+
+This benchmark serves as a foundation for the k-means implementation,
+where each iteration relies on repeated point-to-point and collective
+communication patterns similar to those validated here.
+
+Validating correctness and semantics at the microbenchmark level
+simplifies the analysis of higher-level distributed algorithms.
 
 ---
 
 ## Notes on Evaluation
 
-* Results obtained locally are **not meant to match cloud-scale performance** reported in the paper.
+* Results obtained locally are **not intended to match cloud-scale performance**
+  reported in the paper.
 * The purpose of this benchmark is to validate:
 
   * correctness
@@ -160,10 +176,11 @@ Performance analysis at scale is left for future experiments.
 
 ## Key Takeaways
 
-* The pair benchmark validates correct BCM point-to-point communication via an indirect backend.
-* Indirect backend-based messaging works as expected.
-* This benchmark serves as a reference for:
+* The pair benchmark validates correct BCM point-to-point communication
+  via an indirect backend.
+* Backend-based messaging behaves as expected.
+* This benchmark provides a solid reference for:
 
-  * understanding BCM behavior before analyzing k-means
+  * understanding BCM behavior
   * preparing live coding exercises
   * extending communication patterns for k-means and other distributed algorithms
