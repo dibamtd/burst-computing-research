@@ -25,7 +25,18 @@ cargo run --example kmeans_local --features rabbitmq
 ## Output (sample)
 
 ```txt
-[kmeans_local] done. final centroids = [76.433464, 76.0197, 47.352646, 43.56821, 78.36914, 21.850948, 21.756115, 75.069626, 20.713223, 20.303316]
+[kmeans_local] done. final centroids = [
+    76.433464,
+    76.0197,
+    47.352646,
+    43.56821,
+    78.36914,
+    21.850948,
+    21.756115,
+    75.069626,
+    20.713223,
+    20.303316]
+
 
 ```
 
