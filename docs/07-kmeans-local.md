@@ -187,4 +187,3 @@ Two common bottlenecks:
 * This run validates local distributed execution using BCM + RabbitMQ without any cloud services.
 * The communication pattern is comparable to MPI-style programs (broadcast + gather), but implemented via BCM.
 * MPI reference implementation and explanations are in: [https://github.com/dibamtd/mpi-distributed-computing](https://github.com/dibamtd/mpi-distributed-computing)
-```
