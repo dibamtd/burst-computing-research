@@ -6,8 +6,8 @@ The focus is on local execution, communication semantics, and practical validati
 of the Rust prototype (using RabbitMQ as the backend), without any cloud components.
 
 The documents progress from conceptual background to concrete experiments and
-execution results, and are intended to demonstrate both understanding and
-practical system-level work.
+execution results, and are intended to demonstrate both conceptual understanding
+and practical system-level work in distributed computing.
 
 ## Recommended reading order
 
@@ -36,18 +36,30 @@ practical system-level work.
    explicit send/receive patterns between workers.
 
 7. **07-kmeans-local.md**  
-   Local execution of a k-means application using BCM with synthetic data,
-   validating end-to-end distributed computation without cloud or S3
-   dependencies.
+   Local execution of a distributed k-means application using BCM with synthetic
+   data. This document explains how computation is distributed across workers,
+   how broadcast and gather communication are used, and how scalability is
+   affected by computation and communication costs.
 
-8. **99-presentation-outline.md**  
+8. **10-balanced-kmeans.md**  
+   Design and analysis of balanced k-means in distributed systems. This document
+   discusses the motivation, advantages over standard k-means, and the algorithmic
+   and system-level challenges that make balanced k-means more complex to
+   implement in a distributed setting.
+
+9. **99-presentation-outline.md**  
    A short outline of the planned presentation, summarizing the key ideas,
    experiments, and discussion points.
 
+## Related work (MPI)
+Fundamental MPI concepts and distributed algorithms (including k-means) are
+implemented and discussed in a separate repository:
+- https://github.com/dibamtd/mpi-distributed-computing
+
 ## Scope and limitations
 
-- All experiments are executed locally.
+- All experiments in this repository are executed locally.
 - RabbitMQ is used as the communication backend.
 - No cloud services or object storage (e.g., S3) are involved.
-- The emphasis is on correctness, communication behavior, and understanding
-  rather than large-scale performance evaluation.
+- The emphasis is on correctness, communication behavior, scalability reasoning,
+  and system-level understanding rather than large-scale performance evaluation.
