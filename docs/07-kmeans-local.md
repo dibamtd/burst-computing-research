@@ -108,17 +108,22 @@ Root receives P messages for sums and P messages for counts, aggregates them, an
 
 ---
 
-## Diagram: computation + communication pattern (Mermaid)
-
-```mermaid
+## Diagram: computation + communication pattern 
+```
 flowchart TD
-  R[Worker 0 (Root)\nUpdate centroids] -->|broadcast centroids (k·d)| W1[Worker 1\nAssign points\nCompute partial sums/counts]
-  R -->|broadcast centroids (k·d)| W2[Worker 2\nAssign points\nCompute partial sums/counts]
-  R -->|broadcast centroids (k·d)| Wn[Worker N\nAssign points\nCompute partial sums/counts]
+  R[Worker 0 Root - update centroids]
+  W1[Worker 1 - assign points and compute partial results]
+  W2[Worker 2 - assign points and compute partial results]
+  WN[Worker N - assign points and compute partial results]
 
-  W1 -->|gather sums (k·d) + counts (k)| R
-  W2 -->|gather sums (k·d) + counts (k)| R
-  Wn -->|gather sums (k·d) + counts (k)| R
+  R -->|broadcast centroids k*d| W1
+  R -->|broadcast centroids k*d| W2
+  R -->|broadcast centroids k*d| WN
+
+  W1 -->|gather sums k*d and counts k| R
+  W2 -->|gather sums k*d and counts k| R
+  WN -->|gather sums k*d and counts k| R
+
 ```
 
 ## Diagram (fallback text, if Mermaid is not rendered)
