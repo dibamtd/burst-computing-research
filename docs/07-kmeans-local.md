@@ -1,19 +1,21 @@
-
 # 07 - kmeans_local (Local execution with BCM)
 
 ## Goal
+
 Run the BCM-based k-means example locally using the RabbitMQ backend (synthetic data, no cloud or S3) and verify correct end-to-end execution.
 
 ## Prerequisites
+
 - Rust toolchain
 - Docker
 
 ## Start RabbitMQ
+
 ```bash
 docker run -d --name rabbitmq \
   -p 5672:5672 -p 15672:15672 \
   rabbitmq:3-management
-````
+```
 
 ## Run the example
 
@@ -31,6 +33,6 @@ cargo run --example kmeans_local --features rabbitmq
 
 ## Notes
 
-* The example completes successfully and prints final centroids.
-* Workers execute in parallel and communicate using the Burst Communication Middleware (BCM).
-* This run validates local execution without any cloud-specific components.
+- The example completes successfully and prints final centroids.
+- Workers execute in parallel and communicate using the Burst Communication Middleware (BCM).
+- This run validates local execution without any cloud-specific components.
